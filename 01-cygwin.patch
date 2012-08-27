@@ -1,0 +1,81 @@
+--- origsrc/ffi-1.1.5/ext/ffi_c/LongDouble.c	2012-08-23 03:15:45.528656800 -0500
++++ src/ffi-1.1.5/ext/ffi_c/LongDouble.c	2012-08-23 03:17:23.492260000 -0500
+@@ -37,7 +37,7 @@ rbffi_num2longdouble(VALUE value)
+ 
+     if (RTEST(rb_cBigDecimal) && rb_cBigDecimal != rb_cObject && RTEST(rb_obj_is_kind_of(value, rb_cBigDecimal))) {
+         VALUE s = rb_funcall(value, rb_intern("to_s"), 1, rb_str_new2("E"));
+-        return strtold(RSTRING_PTR(s), NULL);
++        return (long double) strtod(RSTRING_PTR(s), NULL);
+     }
+ 
+     /* Fall through to handling as a float */
+--- origsrc/ffi-1.1.5/ext/ffi_c/extconf.rb	2012-08-23 03:15:45.572659400 -0500
++++ src/ffi-1.1.5/ext/ffi_c/extconf.rb	2012-08-23 03:17:40.775248600 -0500
+@@ -28,7 +28,6 @@ if !defined?(RUBY_ENGINE) || RUBY_ENGINE
+ 
+   create_header
+   
+-  $CFLAGS << " -mwin32 " if RbConfig::CONFIG['host_os'] =~ /cygwin/
+   $LOCAL_LIBS << " ./libffi/.libs/libffi_convenience.lib" if RbConfig::CONFIG['host_os'] =~ /mswin/
+   #$CFLAGS << " -Werror -Wunused -Wformat -Wimplicit -Wreturn-type "
+   if (ENV['CC'] || RbConfig::MAKEFILE_CONFIG['CC'])  =~ /gcc/
+--- origsrc/ffi-1.1.5/lib/ffi/library.rb	2012-08-23 03:15:46.191694800 -0500
++++ src/ffi-1.1.5/lib/ffi/library.rb	2012-08-23 03:40:59.750265400 -0500
+@@ -38,7 +38,13 @@ module FFI
+ 
+     if lib && File.basename(lib) == lib
+       lib = Platform::LIBPREFIX + lib unless lib =~ /^#{Platform::LIBPREFIX}/
+-      r = Platform::IS_GNU ? "\\.so($|\\.[1234567890]+)" : "\\.#{Platform::LIBSUFFIX}$"
++      r = if Platform::IS_GNU 
++            "\\.so($|\\.[1234567890]+)" 
++          elsif Platform::IS_CYGWIN
++            "\\-[1234567890]+.dll$" 
++          else
++            "\\.#{Platform::LIBSUFFIX}$"
++          end
+       lib += ".#{Platform::LIBSUFFIX}" unless lib =~ /#{r}/
+     end
+ 
+--- origsrc/ffi-1.1.5/lib/ffi/platform.rb	2012-08-23 03:15:46.196695100 -0500
++++ src/ffi-1.1.5/lib/ffi/platform.rb	2012-08-23 03:37:43.621047400 -0500
+@@ -73,6 +73,7 @@ module FFI
+     IS_MAC = is_os("darwin")
+     IS_FREEBSD = is_os("freebsd")
+     IS_OPENBSD = is_os("openbsd")
++    IS_CYGWIN = is_os("cygwin")
+     IS_WINDOWS = is_os("windows")
+     IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD
+     CONF_DIR = File.join(File.dirname(__FILE__), 'platform', NAME)
+@@ -80,14 +81,21 @@ module FFI
+ 
+     
+ 
+-    LIBPREFIX = IS_WINDOWS ? '' : 'lib'
++    LIBPREFIX = case OS
++    when /cygwin/
++      'cyg'
++    when /windows/
++      ''
++    else
++      'lib'
++    end
+ 
+     LIBSUFFIX = case OS
+     when /darwin/
+       'dylib'
+     when /linux|bsd|solaris/
+       'so'
+-    when /windows/
++    when /windows|cygwin/
+       'dll'
+     else
+       # Punt and just assume a sane unix (i.e. anything but AIX)
+@@ -98,6 +106,8 @@ module FFI
+       RbConfig::CONFIG['RUBY_SO_NAME'].split('-')[-2] + '.dll'
+     elsif IS_GNU
+       GNU_LIBC
++    elsif IS_CYGWIN
++      'cygwin1.dll'
+     else
+       "#{LIBPREFIX}c.#{LIBSUFFIX}"
+     end
