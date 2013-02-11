@@ -1,0 +1,12 @@
+inherit rubygem
+
+NAME="ruby-ffi"
+VERSION=1.3.1
+RELEASE=1
+CATEGORY="Ruby"
+SUMMARY="Ruby FFI extension"
+DESCRIPTION="Ruby-FFI is a ruby extension for programmatically loading dynamic
+libraries, binding functions within them, and calling those functions from Ruby
+code. Moreover, a Ruby-FFI extension works without changes on Ruby and JRuby."
+
+PATCH_URI="01-cygwin.patch"
