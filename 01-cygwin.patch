@@ -1,6 +1,6 @@
---- origsrc/ffi-1.1.5/ext/ffi_c/LongDouble.c	2012-08-23 03:15:45.528656800 -0500
-+++ src/ffi-1.1.5/ext/ffi_c/LongDouble.c	2012-08-23 03:17:23.492260000 -0500
-@@ -37,7 +37,7 @@ rbffi_num2longdouble(VALUE value)
+--- origsrc/ffi-1.8.1/ext/ffi_c/LongDouble.c	2013-06-30 23:08:55.816577800 -0500
++++ src/ffi-1.8.1/ext/ffi_c/LongDouble.c	2013-05-07 03:57:46.000000000 -0500
+@@ -41,7 +41,7 @@ rbffi_num2longdouble(VALUE value)
  
      if (RTEST(rb_cBigDecimal) && rb_cBigDecimal != rb_cObject && RTEST(rb_obj_is_kind_of(value, rb_cBigDecimal))) {
          VALUE s = rb_funcall(value, rb_intern("to_s"), 1, rb_str_new2("E"));
@@ -9,73 +9,119 @@
      }
  
      /* Fall through to handling as a float */
---- origsrc/ffi-1.1.5/ext/ffi_c/extconf.rb	2012-08-23 03:15:45.572659400 -0500
-+++ src/ffi-1.1.5/ext/ffi_c/extconf.rb	2012-08-23 03:17:40.775248600 -0500
-@@ -28,7 +28,6 @@ if !defined?(RUBY_ENGINE) || RUBY_ENGINE
- 
-   create_header
-   
--  $CFLAGS << " -mwin32 " if RbConfig::CONFIG['host_os'] =~ /cygwin/
-   $LOCAL_LIBS << " ./libffi/.libs/libffi_convenience.lib" if RbConfig::CONFIG['host_os'] =~ /mswin/
-   #$CFLAGS << " -Werror -Wunused -Wformat -Wimplicit -Wreturn-type "
-   if (ENV['CC'] || RbConfig::MAKEFILE_CONFIG['CC'])  =~ /gcc/
---- origsrc/ffi-1.1.5/lib/ffi/library.rb	2012-08-23 03:15:46.191694800 -0500
-+++ src/ffi-1.1.5/lib/ffi/library.rb	2012-08-23 03:40:59.750265400 -0500
+--- origsrc/ffi-1.8.1/lib/ffi/library.rb	2013-05-07 03:57:44.462888900 -0500
++++ src/ffi-1.8.1/lib/ffi/library.rb	2013-05-07 04:09:36.353606800 -0500
 @@ -38,7 +38,13 @@ module FFI
  
      if lib && File.basename(lib) == lib
        lib = Platform::LIBPREFIX + lib unless lib =~ /^#{Platform::LIBPREFIX}/
 -      r = Platform::IS_GNU ? "\\.so($|\\.[1234567890]+)" : "\\.#{Platform::LIBSUFFIX}$"
 +      r = if Platform::IS_GNU 
-+            "\\.so($|\\.[1234567890]+)" 
++             "\\.so($|\\.[1234567890]+)"
 +          elsif Platform::IS_CYGWIN
-+            "\\-[1234567890]+.dll$" 
++             "\\-[1234567890]+.dll$"
 +          else
-+            "\\.#{Platform::LIBSUFFIX}$"
++             "\\.#{Platform::LIBSUFFIX}$"
 +          end
        lib += ".#{Platform::LIBSUFFIX}" unless lib =~ /#{r}/
      end
  
---- origsrc/ffi-1.1.5/lib/ffi/platform.rb	2012-08-23 03:15:46.196695100 -0500
-+++ src/ffi-1.1.5/lib/ffi/platform.rb	2012-08-23 03:37:43.621047400 -0500
-@@ -73,6 +73,7 @@ module FFI
-     IS_MAC = is_os("darwin")
+--- origsrc/ffi-1.8.1/lib/ffi/platform/i386-cygwin/types.conf	2013-05-07 03:57:44.477889800 -0500
++++ src/ffi-1.8.1/lib/ffi/platform/i386-cygwin/types.conf	2013-06-30 23:05:50.596057800 -0500
+@@ -1,3 +1,40 @@
+-rbx.platform.typedef.size_t = uint
+-rbx.platform.typedef.ptrdiff_t = int
+-rbx.platform.typedef.ssize_t = int
++rbx.platform.typedef.blkcnt_t = long_long
++rbx.platform.typedef.blksize_t = int
++rbx.platform.typedef.clockid_t = long
++rbx.platform.typedef.dev_t = uint
++rbx.platform.typedef.fsblkcnt_t = ulong
++rbx.platform.typedef.fsfilcnt_t = ulong
++rbx.platform.typedef.gid_t = uint
++rbx.platform.typedef.id_t = uint
++rbx.platform.typedef.in_addr_t = uint
++rbx.platform.typedef.in_port_t = ushort
++rbx.platform.typedef.ino_t = ulong_long
++rbx.platform.typedef.int8_t = char
++rbx.platform.typedef.int16_t = short
++rbx.platform.typedef.int32_t = int
++rbx.platform.typedef.int64_t = long_long
++rbx.platform.typedef.key_t = long_long
++rbx.platform.typedef.loff_t = long_long
++rbx.platform.typedef.mode_t = uint
++rbx.platform.typedef.nlink_t = ushort
++rbx.platform.typedef.off_t = long
++rbx.platform.typedef.pid_t = int
++rbx.platform.typedef.pthread_key_t = pointer
++rbx.platform.typedef.pthread_once_t = pointer
++rbx.platform.typedef.pthread_t = pointer
++rbx.platform.typedef.quad_t = long_long
++rbx.platform.typedef.register_t = int
++rbx.platform.typedef.rlim_t = ulong
++rbx.platform.typedef.sa_family_t = ushort
++rbx.platform.typedef.size_t = ulong
++rbx.platform.typedef.socklen_t = int
++rbx.platform.typedef.ssize_t = long
++rbx.platform.typedef.suseconds_t = long
++rbx.platform.typedef.time_t = long
++rbx.platform.typedef.timer_t = ulong
++rbx.platform.typedef.u_int16_t = ushort
++rbx.platform.typedef.u_int32_t = uint
++rbx.platform.typedef.u_int64_t = ulong_long
++rbx.platform.typedef.u_int8_t = uchar
++rbx.platform.typedef.u_quad_t = ulong_long
++rbx.platform.typedef.uid_t = uint
+--- origsrc/ffi-1.8.1/lib/ffi/platform/x86_64-cygwin/types.conf	1969-12-31 18:00:00.000000000 -0600
++++ src/ffi-1.8.1/lib/ffi/platform/x86_64-cygwin/types.conf	2013-06-30 23:08:39.617520800 -0500
+@@ -0,0 +1,40 @@
++rbx.platform.typedef.blkcnt_t = long
++rbx.platform.typedef.blksize_t = int
++rbx.platform.typedef.clockid_t = long
++rbx.platform.typedef.dev_t = uint
++rbx.platform.typedef.fsblkcnt_t = ulong
++rbx.platform.typedef.fsfilcnt_t = ulong
++rbx.platform.typedef.gid_t = uint
++rbx.platform.typedef.id_t = uint
++rbx.platform.typedef.in_addr_t = uint
++rbx.platform.typedef.in_port_t = ushort
++rbx.platform.typedef.ino_t = ulong
++rbx.platform.typedef.int8_t = char
++rbx.platform.typedef.int16_t = short
++rbx.platform.typedef.int32_t = int
++rbx.platform.typedef.int64_t = long
++rbx.platform.typedef.key_t = long
++rbx.platform.typedef.loff_t = long
++rbx.platform.typedef.mode_t = uint
++rbx.platform.typedef.nlink_t = ushort
++rbx.platform.typedef.off_t = long
++rbx.platform.typedef.pid_t = int
++rbx.platform.typedef.pthread_key_t = pointer
++rbx.platform.typedef.pthread_once_t = pointer
++rbx.platform.typedef.pthread_t = pointer
++rbx.platform.typedef.quad_t = long
++rbx.platform.typedef.register_t = int
++rbx.platform.typedef.rlim_t = ulong
++rbx.platform.typedef.sa_family_t = ushort
++rbx.platform.typedef.size_t = ulong
++rbx.platform.typedef.socklen_t = int
++rbx.platform.typedef.ssize_t = long
++rbx.platform.typedef.suseconds_t = long
++rbx.platform.typedef.time_t = long
++rbx.platform.typedef.timer_t = ulong
++rbx.platform.typedef.u_int16_t = ushort
++rbx.platform.typedef.u_int32_t = uint
++rbx.platform.typedef.u_int64_t = ulong
++rbx.platform.typedef.u_int8_t = uchar
++rbx.platform.typedef.u_quad_t = ulong
++rbx.platform.typedef.uid_t = uint
+--- origsrc/ffi-1.8.1/lib/ffi/platform.rb	2013-05-07 03:57:44.683901600 -0500
++++ src/ffi-1.8.1/lib/ffi/platform.rb	2013-05-07 04:10:03.070134900 -0500
+@@ -74,6 +74,7 @@ module FFI
      IS_FREEBSD = is_os("freebsd")
      IS_OPENBSD = is_os("openbsd")
-+    IS_CYGWIN = is_os("cygwin")
      IS_WINDOWS = is_os("windows")
++    IS_CYGWIN = is_os("cygwin")
      IS_BSD = IS_MAC || IS_FREEBSD || IS_OPENBSD
      CONF_DIR = File.join(File.dirname(__FILE__), 'platform', NAME)
-@@ -80,14 +81,21 @@ module FFI
- 
-     
- 
--    LIBPREFIX = IS_WINDOWS ? '' : 'lib'
-+    LIBPREFIX = case OS
-+    when /cygwin/
-+      'cyg'
-+    when /windows/
-+      ''
-+    else
-+      'lib'
-+    end
- 
-     LIBSUFFIX = case OS
-     when /darwin/
-       'dylib'
-     when /linux|bsd|solaris/
-       'so'
--    when /windows/
-+    when /windows|cygwin/
-       'dll'
-     else
-       # Punt and just assume a sane unix (i.e. anything but AIX)
-@@ -98,6 +106,8 @@ module FFI
-       RbConfig::CONFIG['RUBY_SO_NAME'].split('-')[-2] + '.dll'
-     elsif IS_GNU
-       GNU_LIBC
-+    elsif IS_CYGWIN
-+      'cygwin1.dll'
-     else
-       "#{LIBPREFIX}c.#{LIBSUFFIX}"
-     end
+     public
